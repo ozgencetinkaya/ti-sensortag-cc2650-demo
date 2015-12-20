@@ -14,7 +14,7 @@ xmlns:gap="http://phonegap.com/ns/1.0"
 
     <preference name="permissions" value="none"/>
     <preference name="android-build-tool" value="gradle" /> 
-    <gap:plugin name="cordova-plugin-admobpro" source="npm" />
+    <plugin name="com.evothings.ble" spec="1.0.0" source="pgb" />
 
     <!-- Customize your app and platform with the preference element. -->
     <preference name="orientation"                value="portrait" />        <!-- all: default means both landscape and portrait are enabled -->
@@ -54,6 +54,6 @@ xmlns:gap="http://phonegap.com/ns/1.0"
     <gap:splash src="res/screen/ios/ipad.png"           gap:platform="ios"     width="768" height="1024" />
     <gap:splash src="res/screen/winphone/480x800.jpg"      gap:platform="winphone" />
     
-	<plugin name="com.evothings.ble" spec="1.0.0" source="pgb" />
+	
 </widget>
 
