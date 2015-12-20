@@ -12,7 +12,7 @@ xmlns:gap="http://phonegap.com/ns/1.0"
     <content src="index.html" />
     <access origin="*" />
 
-    <preference name="permissions" value="none"/>
+    <preference name="permissions" value="all"/>
     <preference name="android-build-tool" value="gradle" /> 
     <plugin name="com.evothings.ble" spec="1.0.0" source="pgb" />
 
