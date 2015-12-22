@@ -34,6 +34,7 @@
 	<script src="libs/evothings/ui/ui.js"></script>
 	<script src="libs/evothings/easyble/easyble.js"></script>
 	<script src="app.js"></script>
+	<script src="quiz.js"></script>
 
 </head>
 
@@ -44,7 +45,7 @@
 			<img src="ui/images/arrow-left.svg" />
 		</button>
 
-		<img class="logotype" src="ui/images/logo.svg" alt="Evothings" />
+		<!--img class="logotype" src="ui/images/logo.svg" alt="Evothings" /-->
 
 		<button id="menu-button" tabindex="0" onclick="this.focus()">
 			<img src="ui/images/menu.svg" />
@@ -52,11 +53,15 @@
 
 		<menu>
 			<menuitem>
-				<a href="#">Demo</a>
+				<a href="#">Connection</a>
 			</menuitem>
 
 			<menuitem>
 				<a href="#information">Info</a>
+			</menuitem>
+			
+			<menuitem>
+				<a href="#game">Game</a>
 			</menuitem>
 		</menu>
 	</header>
@@ -73,12 +78,23 @@
 	<p>Device 3: <span <span id="device2">Not Connected</span></p>
 	
 	<canvas id="canvas0" width="300" height="150"></canvas>
+	<span id="temp0">N/A</span>
 	<canvas id="canvas1" width="300" height="150"></canvas>
+	<span id="temp1">N/A</span>
 	<canvas id="canvas2" width="300" height="150"></canvas>
+	<span id="temp2">N/A</span>
 	
-	<p>Device 1 Button: <span <span id="button0">Not Pressed</span></p>
-	<p>Device 2 Button: <span <span id="button1">Not Pressed</span></p>
-	<p>Device 3 Button: <span <span id="button2">Not Pressed</span></p>
+	<p>Device 1 Button: 
+		<canvas id="colortest0" width="25" height="25" style="background:red;"></canvas>
+		<span id="button0">Not Pressed</span>
+	</p>
+	<p>Device 2 Button: 
+		<canvas id="colortest1" width="25" height="25" style="background:green;"></canvas>
+		<span id="button1">Not Pressed</span>
+	</p>
+	<p>Device 3 Button: 
+		<canvas id="colortest2" width="25" height="25" style="background:blue;"></canvas>
+		<span id="button2">Not Pressed</span></p>
 	<section id='information'>
 
 		<h2>Info</h2>
@@ -95,6 +111,27 @@
 		</p>
 
 
+	</section>
+	<section id="game">
+		<h2>Trivia</h2>
+		<p id="game_status">Waiting for Users to connect</p>
+		<p><span>Timer:</span><span id="counter"></span></p>
+		<p><span>User Color:   </span>
+			<canvas id="user" width="25" height="25" style="background:black;"></canvas>
+		</p>
+		<p>
+			<button onclick="app.onGameStart()" class="green">Start Game</button>
+			<button onclick="app.onGameStop()" class="red">Stop Game</button>
+		</p>
+		
+		
+		
+		<div id="content">
+			<h3 id="question"></h3>
+			<div id="choices"></div>
+			<p id="score"></p>
+		</div>
+	  
 	</section>
 
 </body>

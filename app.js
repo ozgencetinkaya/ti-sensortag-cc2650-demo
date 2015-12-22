@@ -11,13 +11,22 @@ var app = {};
 */
 var devices = []; 
 /**
+	*Object that holds connected devices.
+	*
+*/
+var connectedDevicesCheck = [];
+/**
  * Data that is plotted on the canvas.
  */
 app.dataPoints = [];
+/**
+ * Creating 2d array.
+ */
 app.dataPoints[0] = [];
 app.dataPoints[1] = [];
 app.dataPoints[2] = [];
 
+app.UserColors = ['red','green','blue'];
 /**
  * Timeout (ms) after which a message is shown if the SensorTag wasn't found.
  */
@@ -142,15 +151,27 @@ app.clearDeviceStatus  = function()
 app.showDeviceInfo = function(message, device_id)
 {
 	var id = 'device'+device_id;	
-	hyper.log(id);
+	//hyper.log(id);
 	document.getElementById(id).innerHTML = message;
 }
 
 app.updateButtonInfo = function(message, device_id)
 {
 	var id = 'button'+device_id;	
-	hyper.log(id);
+	//hyper.log(id);
 	document.getElementById(id).innerHTML = message;
+}
+
+app.writeTempValue = function(value, device_id)
+{
+	var id = 'temp'+device_id;	
+	//hyper.log(id);
+	document.getElementById(id).innerHTML = value;
+}
+
+app.updateGameStatus = function(message)
+{
+	document.getElementById('game_status').innerHTML = message;
 }
 
 app.showObjectDetails = function(object)
@@ -171,6 +192,17 @@ app.findById = function(source, id)
   }
   return -1;
 };
+
+app.setBackgroundColor = function(i)
+{
+	console.log(app.UserColors[i]);
+	document.getElementById('user').style.background = app.UserColors[i];
+}
+
+app.setBackgroundColorDefault = function()
+{
+	document.getElementById('user').style.background = 'black';
+}
 
 app.onStartButton = function()
 {
@@ -292,9 +324,9 @@ app.connectToDevice = function(device,i)
 		function(device)
 		{
 			var i = app.findById(devices,device.address);
-			hyper.log(i);
-			hyper.log(devices[i].address);
-			hyper.log(device.address);
+			//hyper.log(i);
+			//hyper.log(devices[i].address);
+			//hyper.log(device.address);
 			app.showDeviceInfo('Connected - reading SensorTag services...',i);
 			app.readServices(device,i);
 		},
@@ -311,8 +343,9 @@ app.readServices = function(device,i)
 {
 	device.readServices(
 		[
-		app.sensortag.MOVEMENT.SERVICE // Movement service UUID.
-		,app.sensortag.KEYPRESS.SERVICE // KeyPress service UUID.
+		//app.sensortag.MOVEMENT.SERVICE // Movement service UUID.
+		app.sensortag.KEYPRESS.SERVICE // KeyPress service UUID.
+		,app.sensortag.TEMPERATURE.SERVICE //Temperature service UUID.
 		],
 		// Function that monitors accelerometer data.
 		app.startNotification,
@@ -330,6 +363,7 @@ app.startNotification = function(device)
 	var id = app.findById(devices,device.address);
 	app.showDeviceInfo('Starting notifications...',id);
 
+	/*
 	// Set accelerometer configuration to ON.
 	// magnetometer on: 64 (1000000) (seems to not work in ST2 FW 0.89)
 	// 3-axis acc. on: 56 (0111000)
@@ -387,13 +421,14 @@ app.startNotification = function(device)
 			app.showInfo('Status: Data stream active - accelerometer');
 			var dataArray = new Uint8Array(data);
 			var values = app.getAccelerometerValues(dataArray);
-			app.drawDiagram(device,values);
+			//app.drawDiagram(device,values);
 		},
 		function(errorCode)
 		{
 			console.log('Error: enableNotification: ' + errorCode + '.');
 		});
-		
+	*/
+	
 	// Set keypress notification to ON.
 	device.writeDescriptor(
 		app.sensortag.KEYPRESS.DATA,
@@ -417,7 +452,7 @@ app.startNotification = function(device)
 		app.sensortag.KEYPRESS.DATA,
 		function(data)
 		{
-			app.showInfo('Status: Data stream active - accelerometer, keypress');
+			app.showInfo('Status: Data stream active - keypress');
 			var dataArray = new Uint8Array(data);
 			var values = app.getKeyPressValues(device,dataArray);
 		},
@@ -425,14 +460,90 @@ app.startNotification = function(device)
 		{
 			console.log('Error: enableNotification: ' + errorCode + '.');
 		});
+		
+	//Activate TEMPERATURE service
+	device.writeCharacteristic(
+		app.sensortag.TEMPERATURE.CONFIG,
+		new Uint8Array([1]),
+		function()
+		{
+			console.log('Status: TEMP writeCharacteristic CONFIG ok.');
+		},
+		function(errorCode)
+		{
+			console.log('Error: TEMP writeCharacteristic: ' + errorCode + '.');
+		});
+
+	// Set TEMPERATURE period to 100 ms.
+	device.writeCharacteristic(
+		app.sensortag.TEMPERATURE.PERIOD,
+		new Uint8Array([100]),
+		function()
+		{
+			console.log('Status: TEMP writeCharacteristic PERIOD ok.');
+		},
+		function(errorCode)
+		{
+			console.log('Error: TEMP writeCharacteristic: ' + errorCode + '.');
+		});
+
+	// Set TEMPERATURE notification to ON.
+	device.writeDescriptor(
+		app.sensortag.TEMPERATURE.DATA,
+		app.sensortag.NOTIFICATION_DESCRIPTOR, // Notification descriptor.
+		new Uint8Array([1,0]),
+		function()
+		{
+			console.log('Status: TEMP writeDescriptor ok.');
+		},
+		function(errorCode)
+		{
+			// This error will happen on iOS, since this descriptor is not
+			// listed when requesting descriptors. On iOS you are not allowed
+			// to use the configuration descriptor explicitly. It should be
+			// safe to ignore this error.
+			console.log('Error: TEMP writeDescriptor: ' + errorCode + '.');
+		});
+
+	// Start TEMPERATURE notification.
+	device.enableNotification(
+		app.sensortag.TEMPERATURE.DATA,
+		function(data)
+		{
+			app.showInfo('Status: Data stream active - TEMPERATURE');
+			//var dataArray = new Uint8Array(data);
+			//var values = app.getAccelerometerValues(dataArray);
+			app.showTemp(device,data);
+		},
+		function(errorCode)
+		{
+			console.log('Error: TEMP enableNotification: ' + errorCode + '.');
+		});
+		
+	connectedDevicesCheck.push(device);
 };
 
+var keypressBuffer = 4;
+var keypressOrder = -1;
 
 app.getKeyPressValues = function(device,data)
 {
 	var i = app.findById(devices,device.address);
 	app.updateButtonInfo(data,i);
-	console.log(data);
+	app.setBackgroundColor(i);
+	//app.setBackgroundColorDefault();
+	//console.log(data);
+	if(keypressBuffer == 4)
+	{
+		keypressBuffer = data;
+		keypressOrder = i;
+	}
+}
+
+app.clearKeyPressValues = function()
+{
+	keypressBuffer = 4;
+	keypressOrder = -1;
 }
 
 /**
@@ -452,6 +563,22 @@ app.getAccelerometerValues = function(data)
 	// Return result.
 	return { x: ax, y: ay, z: az };
 };
+
+app.showTemp = function(device,data)
+{
+	var i = app.findById(devices,device.address);
+	var tmp = new Uint8Array(data);
+	// Calculate ambient temperature (Celsius).
+	var ac = evothings.util.littleEndianToUint16(tmp, 2) / 128.0;
+
+	// Calculate target temperature (Celsius).
+	var tc = evothings.util.littleEndianToInt16(tmp, 0);
+	tc = (tc >> 2) * 0.03125
+	//console.log('DeviceId: '+i+'  Ambient Temp:'+ac+'  Target Temp:'+tc);
+	var values = {x:tc};
+	app.writeTempValue(tc,i);
+	app.drawDiagram(device,values);
+}
 
 /**
  * Plot diagram of sensor values.
@@ -479,9 +606,12 @@ app.drawDiagram = function(device,values)
 	function calcDiagramY(value)
 	{
 		// Return Y coordinate for this value.
-		var diagramY =
+		/*var diagramY =
 			((value * canvas.height) / 2)
 			+ (canvas.height / 2);
+		*/
+		var diagramY = (canvas.height / 2) - value + 30;
+		//console.log(diagramY);
 		return diagramY;
 	}
 
@@ -506,10 +636,92 @@ app.drawDiagram = function(device,values)
 	context.clearRect(0, 0, canvas.width, canvas.height);
 
 	// Draw lines.
+	//drawLine('x', '#f00',i);
+	//drawLine('y', '#0f0',i);
+	//drawLine('z', '#00f',i);
 	drawLine('x', '#f00',i);
-	drawLine('y', '#0f0',i);
-	drawLine('z', '#00f',i);
 };
 
+app.onGameStart = function()
+{
+	if(connectedDevicesCheck.length >= 0 && devices.length == connectedDevicesCheck.length)
+	{
+		app.setBackgroundColorDefault();
+		app.updateGameStatus('All Users Connected, Game starts...');
+		app.count(askQuestion,3,1); 
+		//setTimeout(app.updateGameStatus('Wait for timer to finish and press a button if you would like to answer...'),3000);
+		//setTimeout(app.count(app.clearKeyPressValues,2),3000);
+		var interval=setInterval(function(){
+			//keypressBuffer = 0;
+			//keypressOrder = -1;				
+			if(currentQuestion < quiz.length - 1 )
+			{
+				if(keypressBuffer>0 && keypressBuffer<4)
+				{
+					checkAnswer(keypressBuffer);
+				}
+				else
+				{
+					setTimeout(app.updateGameStatus('Please answer the question...'),2000);
+				}
+			}
+			else
+			{
+				app.updateGameStatus('Game ends...');
+				console.log('Game ends..');
+				clearInterval(interval);					
+			}
+		},1000);		
+	}
+	else
+	{
+		app.updateGameStatus('Waiting for Users to Connect...');
+	}
+	
+};
+
+app.onGameStop = function()
+{
+	app.updateGameStatus('Game is stopping...');
+	app.count(app.empty,2,0);
+	var interval = setInterval(function(){app.updateGameStatus('Game is stopped...');clearInterval(interval);},3000);
+};
+
+app.count = function(call,time,state){
+  var clock = time;
+  var count_display = document.getElementById('counter');
+  
+  var timeinterval = setInterval(function(){
+    count_display.innerHTML = clock;
+	clock--;
+    if(clock <0){
+	  if(state==0)
+	  {
+		  call();
+		  clearInterval(timeinterval);
+		  app.clearCount();
+	  }
+	  else if(state==1)
+	  {
+		  call();
+		  clearInterval(timeinterval);
+		  app.clearCount();
+		  app.updateGameStatus('Wait for timer to finish and press a button if you would like to answer...');
+		  app.count(app.clearKeyPressValues,2,0);
+	  }
+    }
+  },1000);
+}
+
+app.clearCount = function()
+{
+	document.getElementById('counter').innerHTML = '';
+}
+
+//Empty function for debugging
+app.empty = function()
+{
+	
+}
 // Initialize the app.
 app.initialize();
