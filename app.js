@@ -137,7 +137,7 @@ app.showInfo = function(info)
 app.showDeviceStatus = function(i)
 {
 	var id = 'device'+i;	
-	hyper.log(id);
+	console.log(id);
 	document.getElementById(id).innerHTML = devices[i].address+' '+':Connected';
 }
 
@@ -151,21 +151,21 @@ app.clearDeviceStatus  = function()
 app.showDeviceInfo = function(message, device_id)
 {
 	var id = 'device'+device_id;	
-	//hyper.log(id);
+	//console.log(id);
 	document.getElementById(id).innerHTML = message;
 }
 
 app.updateButtonInfo = function(message, device_id)
 {
 	var id = 'button'+device_id;	
-	//hyper.log(id);
+	//console.log(id);
 	document.getElementById(id).innerHTML = message;
 }
 
 app.writeTempValue = function(value, device_id)
 {
 	var id = 'temp'+device_id;	
-	//hyper.log(id);
+	//console.log(id);
 	document.getElementById(id).innerHTML = value;
 }
 
@@ -180,7 +180,7 @@ app.showObjectDetails = function(object)
 	for (var property in object) {
 		output += property + ': ' + object[property]+'; ';
 	};
-	hyper.log(output);
+	console.log(output);
 }
 
 app.findById = function(source, id) 
@@ -253,11 +253,11 @@ app.startScan = function()
 			for (var property in device) {
 				output += property + ': ' + device[property]+'; ';
 			};
-			hyper.log(output);*/
+			console.log(output);*/
 			if(app.findById(devices,device.address)!=-1)
 			{
-				hyper.log("device is already detected");
-				hyper.log(device.address);
+				console.log("device is already detected");
+				console.log(device.address);
 			}
 			else
 			{
@@ -269,7 +269,7 @@ app.startScan = function()
 				for (var i = 0; i < devices.length; i++)
 				{
 					var html_holder = html_holder+' '+devices[i].address+',';
-					//hyper.log(devices[i].address);
+					//console.log(devices[i].address);
 					app.showDeviceStatus(i);
 				}
 				app.showInfo(html_holder);
@@ -324,9 +324,9 @@ app.connectToDevice = function(device,i)
 		function(device)
 		{
 			var i = app.findById(devices,device.address);
-			//hyper.log(i);
-			//hyper.log(devices[i].address);
-			//hyper.log(device.address);
+			//console.log(i);
+			//console.log(devices[i].address);
+			//console.log(device.address);
 			app.showDeviceInfo('Connected - reading SensorTag services...',i);
 			app.readServices(device,i);
 		},
