@@ -169,6 +169,23 @@ app.writeTempValue = function(value, device_id)
 	document.getElementById(id).innerHTML = value;
 }
 
+app.writeAnswer = function(answer)
+{
+	if(keypressBuffer!=4 && !gameStopped)
+	{
+		console.log(questionAsked);
+		if(questionAsked)
+		{
+			document.getElementById('answer').innerHTML = 'Selected Button is '+answer;
+		}
+	}
+}
+
+app.clearAnswer = function(answer)
+{
+	document.getElementById('answer').innerHTML = '';
+}
+
 app.updateGameStatus = function(message)
 {
 	document.getElementById('game_status').innerHTML = message;
@@ -530,20 +547,51 @@ app.getKeyPressValues = function(device,data)
 {
 	var i = app.findById(devices,device.address);
 	app.updateButtonInfo(data,i);
-	app.setBackgroundColor(i);
+	//app.setBackgroundColor(i);
 	//app.setBackgroundColorDefault();
 	//console.log(data);
-	if(keypressBuffer == 4)
+	if(keypressBuffer == 4 && data!=0)
 	{
 		keypressBuffer = data;
 		keypressOrder = i;
 	}
-}
+	if(i==answeringuser && data!=0)
+	{
+		app.writeAnswer(data);
+		console.log(data);
+		keypressBuffer = data;
+		keypressOrder = i;
+		answer = keypressBuffer;
+	}
 
+}
+var answer=0;
+var answeringuser=0;
 app.clearKeyPressValues = function()
 {
 	keypressBuffer = 4;
 	keypressOrder = -1;
+	questionAsked = true;
+	var timeinterval = setInterval(function(){
+		if(!gameStopped)
+		{			
+			console.log(keypressBuffer);
+			console.log(keypressOrder);
+			if(keypressBuffer!=4)
+			{
+				answeringuser = keypressOrder;
+				answer = keypressBuffer;
+				keypressBuffer = 4;
+				app.setBackgroundColor(answeringuser);
+				app.writeAnswer(keypressBuffer);
+				app.updateGameStatus('User '+answeringuser+' has right to answer...');
+				//check answer;
+				app.count(checkAnswer,10,0);	
+				clearInterval(timeinterval);
+				app.clearCount();
+			}
+		}
+	},1000);
 }
 
 /**
@@ -642,7 +690,8 @@ app.drawDiagram = function(device,values)
 	drawLine('x', '#f00',i);
 };
 
-app.onGameStart = function()
+
+/*app.onGameStart = function()
 {
 	if(connectedDevicesCheck.length >= 0 && devices.length == connectedDevicesCheck.length)
 	{
@@ -679,9 +728,30 @@ app.onGameStart = function()
 	}
 	
 };
+*/
+
+var gameStopped = true;
+var questionAsked = false;
+
+app.onGameStart = function()
+{
+	gameStopped = false;
+	if(connectedDevicesCheck.length >= 0 && devices.length == connectedDevicesCheck.length && !gameStopped)
+	{
+		app.setBackgroundColorDefault();
+		app.updateGameStatus('All Users Connected, Game starts...');
+		app.count(askQuestion,3,1); 
+	}
+	else
+	{
+		app.updateGameStatus('Waiting for Users to Connect...');
+	}	
+};
+
 
 app.onGameStop = function()
 {
+	gameStopped = true;
 	app.updateGameStatus('Game is stopping...');
 	app.count(app.empty,2,0);
 	var interval = setInterval(function(){app.updateGameStatus('Game is stopped...');clearInterval(interval);},3000);
@@ -698,17 +768,16 @@ app.count = function(call,time,state){
 	  if(state==0)
 	  {
 		  call();
-		  clearInterval(timeinterval);
 		  app.clearCount();
 	  }
-	  else if(state==1)
+	  else if(state==1 && !gameStopped)
 	  {
-		  call();
-		  clearInterval(timeinterval);
+		  call();		  
 		  app.clearCount();
 		  app.updateGameStatus('Wait for timer to finish and press a button if you would like to answer...');
-		  app.count(app.clearKeyPressValues,2,0);
+		  app.count(app.clearKeyPressValues,1,0);
 	  }
+	  clearInterval(timeinterval);
     }
   },1000);
 }
